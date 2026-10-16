@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bài tập 38 - Game kiểm tra tốc độ phản xạ</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#05060f;--cyan:#00e5ff;--pink:#ff2d6f;--green:#39ff14;--yellow:#ffe600;--text:#e6f7ff;--dim:#7c8db5;
+--gaming:'Orbitron','Segoe UI',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--mono);display:flex;justify-content:center;padding:18px 10px;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+background:linear-gradient(rgba(0,229,255,.09) 1px,transparent 1px) 0 0/44px 44px,linear-gradient(90deg,rgba(255,45,111,.08) 1px,transparent 1px) 0 0/44px 44px,radial-gradient(ellipse at 50% 120%,rgba(255,45,111,.25),transparent 60%),radial-gradient(ellipse at 50% -20%,rgba(0,229,255,.2),transparent 55%);animation:grid 6s linear infinite}
+@keyframes grid{to{background-position:0 44px,44px 0,0 0,0 0}}
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:100%;overflow-x:auto;text-align:center;padding:6px 8px 10px}
+h1{font:900 clamp(1.3rem,3.6vw,2rem)/1.2 var(--gaming);margin:0 0 18px;letter-spacing:.12em;color:var(--cyan);text-shadow:0 0 8px var(--cyan),0 0 24px var(--cyan),3px 3px 0 var(--pink)}
+.student{margin:8px 0 14px;font-size:.78rem;color:var(--dim)}
+.student b{color:var(--green);text-shadow:0 0 8px var(--green)}
+.hud{display:flex;width:600px;gap:10px;margin:0 auto 10px}
+.stat{flex:1;padding:8px 6px;border:1px solid;border-radius:6px;background:rgba(5,6,15,.7);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.stat b{display:block;margin-top:2px;font:900 1.9rem/1.1 var(--gaming);letter-spacing:0;transition:transform .12s}
+.stat.s{border-color:var(--green);box-shadow:0 0 12px rgba(57,255,20,.35),inset 0 0 12px rgba(57,255,20,.1)}.s b{color:var(--green);text-shadow:0 0 12px var(--green)}
+.stat.t{border-color:var(--cyan);box-shadow:0 0 12px rgba(0,229,255,.35),inset 0 0 12px rgba(0,229,255,.1)}.t b{color:var(--cyan);text-shadow:0 0 12px var(--cyan)}
+.stat.t.low b{color:var(--pink);text-shadow:0 0 14px var(--pink);animation:blink .5s infinite}
+.stat.b{border-color:var(--pink);box-shadow:0 0 12px rgba(255,45,111,.35),inset 0 0 12px rgba(255,45,111,.1)}.b b{color:var(--pink);text-shadow:0 0 12px var(--pink)}
+.pop{transform:scale(1.35)}
+@keyframes blink{50%{opacity:.35}}
+#mute{width:54px;border:1px solid var(--yellow);border-radius:6px;background:rgba(5,6,15,.7);color:var(--yellow);font-size:1.3rem;cursor:pointer;box-shadow:0 0 12px rgba(255,230,0,.3)}
+#mute:hover{background:rgba(255,230,0,.15)}
+#bar{width:600px;height:10px;margin:0 auto 14px;border:1px solid var(--cyan);border-radius:99px;overflow:hidden;background:rgba(0,229,255,.08)}
+#fill{height:100%;width:100%;border-radius:99px;background:var(--green);box-shadow:0 0 12px currentColor;color:var(--green)}
+#arena{position:relative;width:600px;height:400px;margin:0 auto;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:crosshair;
+background:radial-gradient(circle at 50% 50%,#101a3a,#070a1c 75%);border:2px solid var(--cyan);border-radius:10px;outline:2px solid var(--pink);outline-offset:6px;
+box-shadow:0 0 20px var(--cyan),inset 0 0 30px rgba(0,229,255,.25);animation:neon 1.6s ease-in-out infinite}
+@keyframes neon{0%,100%{outline-color:var(--pink);box-shadow:0 0 20px var(--cyan),inset 0 0 30px rgba(0,229,255,.25)}50%{outline-color:rgba(255,45,111,.25);box-shadow:0 0 36px var(--cyan),inset 0 0 44px rgba(0,229,255,.4)}}
+#arena::before{content:"#arena";position:absolute;inset:0;display:grid;place-items:center;font:900 96px var(--gaming);color:rgba(0,229,255,.07);letter-spacing:.05em;pointer-events:none}
+#arena.miss{animation:none;border-color:var(--pink);outline-color:var(--pink);box-shadow:0 0 40px var(--pink),inset 0 0 60px rgba(255,45,111,.55)}
+#target{position:absolute;border:0;padding:0;border-radius:50%;cursor:crosshair;display:none;z-index:2;
+background:radial-gradient(circle,#fff 0 8%,var(--pink) 10% 22%,transparent 24% 34%,var(--pink) 36% 41%,transparent 43% 56%,var(--pink) 58% 65%,transparent 67%);
+filter:drop-shadow(0 0 6px var(--pink)) drop-shadow(0 0 14px var(--pink));animation:spawn .22s ease-out,beat .7s ease-in-out infinite alternate;transition:transform .15s,filter .15s}
+#target::before,#target::after{content:"";position:absolute;background:#fff;opacity:.85;pointer-events:none}
+#target::before{left:-28%;right:-28%;top:calc(50% - 1px);height:2px}
+#target::after{top:-28%;bottom:-28%;left:calc(50% - 1px);width:2px}
+#target:hover{transform:scale(1.14) rotate(45deg);filter:drop-shadow(0 0 8px var(--yellow)) drop-shadow(0 0 20px var(--pink)) brightness(1.3)}
+@keyframes spawn{from{transform:scale(0) rotate(-90deg)}to{transform:scale(1) rotate(0)}}
+@keyframes beat{from{scale:.94}to{scale:1.08}}
+.fx{position:absolute;z-index:3;pointer-events:none;font:900 1.5rem var(--gaming);transform:translate(-50%,-50%);animation:rise .8s forwards}
+.fx.ok{color:var(--green);text-shadow:0 0 10px var(--green)}.fx.bad{color:var(--pink);text-shadow:0 0 10px var(--pink);font-size:1.1rem}
+@keyframes rise{to{transform:translate(-50%,-190%);opacity:0}}
+.spark{position:absolute;z-index:3;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:spark .55s ease-out forwards}
+@keyframes spark{to{transform:translate(var(--x),var(--y)) scale(.1);opacity:0}}
+#overlay{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;background:rgba(3,4,12,.82);backdrop-filter:blur(4px);cursor:default}
+#overlay[hidden]{display:none}
+.hint{font-size:.78rem;color:var(--dim);max-width:420px}
+.big{padding:16px 34px;font:900 1.35rem var(--gaming);letter-spacing:.12em;color:var(--bg);background:linear-gradient(90deg,var(--green),var(--cyan));border:0;border-radius:6px;cursor:pointer;box-shadow:0 0 22px var(--green),0 0 50px rgba(0,229,255,.45);transition:transform .12s,box-shadow .12s;margin-top:6px;animation:glow 1.4s ease-in-out infinite alternate}
+@keyframes glow{from{box-shadow:0 0 14px var(--green)}to{box-shadow:0 0 34px var(--green),0 0 64px var(--cyan)}}
+.big:hover{transform:scale(1.07) skewX(-4deg)}.big:active{transform:scale(.94)}
+.go{font:900 1.2rem var(--gaming);letter-spacing:.3em;color:var(--pink);text-shadow:0 0 14px var(--pink)}
+.final{font:900 4.2rem/1 var(--gaming);color:var(--green);text-shadow:0 0 20px var(--green)}
+.rank{font:700 1.15rem var(--gaming);color:var(--yellow);text-shadow:0 0 12px var(--yellow);margin:2px 0}
+.sb{display:flex;gap:18px;font-size:.78rem;color:var(--text)}.sb span b{color:var(--cyan)}
+#conf{position:fixed;inset:0;z-index:50;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="conf"></canvas>
+<div class="wrap">
+  <h1>⚡ ARENA</h1>
+  
+  <div class="hud">
+    <div class="stat s">Điểm số<b id="score">0</b></div>
+    <div class="stat t" id="timeBox">Thời gian<b><span id="time">30</span>s</b></div>
+    <div class="stat b">Kỷ lục<b id="best">0</b></div>
+    <button id="mute" title="Bật/tắt âm thanh" aria-label="Bật/tắt âm thanh">🔊</button>
+  </div>
+  <div id="bar"><div id="fill"></div></div>
+  <div id="arena">
+    <button id="target" aria-label="Mục tiêu"></button>
+    <div id="overlay">
+      <div class="hint">Click trúng hồng tâm trước khi nó nhảy đi. Click trượt sẽ bị <b style="color:var(--pink)">trừ 0,5 giây</b>!</div>
+      <button id="startBtn" class="big">BẮT ĐẦU TRÒ CHƠI</button>
+    </div>
+  </div>
+</div>
+<script>
+const GAME_MS = 30000, MOVE_MS = 1000, PENALTY = 500;
+const $ = id => document.getElementById(id);
+const arena=$('arena'), target=$('target'), overlay=$('overlay'), scoreEl=$('score'), timeEl=$('time'),
+      timeBox=$('timeBox'), bestEl=$('best'), fill=$('fill'), muteBtn=$('mute');
+let score=0, hits=0, misses=0, running=false, deadline=0, lastSec=0, moveTimer=null, tickTimer=null, best=0, muted=false, ac=null;
+try{ best=+localStorage.getItem('bt38best')||0; }catch(e){}
+bestEl.textContent=best;
+
+function tone(f,d=.1,type='square',v=.06,delay=0,slide=0){
+  if(muted) return;
+  try{
+    ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const t=ac.currentTime+delay, o=ac.createOscillator(), g=ac.createGain();
+    o.type=type; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(slide,t+d);
+    g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+d);
+    o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t+d);
+  }catch(e){}
+}
+const sfx={
+  hit:()=>tone(900,.09,'triangle',.09,0,1500),
+  miss:()=>tone(160,.18,'sawtooth',.07,0,70),
+  beep:()=>tone(1000,.12,'square',.06),
+  start:()=>[440,660,880].forEach((f,i)=>tone(f,.12,'square',.05,i*.08)),
+  over:()=>[523,415,330,262].forEach((f,i)=>tone(f,.25,'sawtooth',.06,i*.18)),
+  win:()=>[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.09,i*.12))
+};
+muteBtn.onclick=()=>{ muted=!muted; muteBtn.textContent=muted?'🔇':'🔊'; };
+
+function moveTarget(){
+  const s=44+Math.floor(Math.random()*17);        
+  target.style.width=target.style.height=s+'px';
+  target.style.left=Math.floor(Math.random()*(arena.clientWidth-s+1))+'px';
+  target.style.top=Math.floor(Math.random()*(arena.clientHeight-s+1))+'px';
+  target.style.animation='none'; void target.offsetWidth; target.style.animation='';
+}
+function restartMove(){ clearInterval(moveTimer); moveTimer=setInterval(moveTarget,MOVE_MS); }
+function bump(el){ el.classList.add('pop'); setTimeout(()=>el.classList.remove('pop'),130); }
+function floatText(x,y,txt,cls){
+  const f=document.createElement('div'); f.className='fx '+cls; f.textContent=txt;
+  f.style.left=x+'px'; f.style.top=y+'px'; arena.appendChild(f); setTimeout(()=>f.remove(),800);
+}
+function sparks(x,y){
+  const cols=['#39ff14','#00e5ff','#ff2d6f','#ffe600'];
+  for(let i=0;i<16;i++){
+    const d=document.createElement('div'), a=Math.random()*Math.PI*2, r=30+Math.random()*50;
+    d.className='spark'; d.style.left=x+'px'; d.style.top=y+'px';
+    d.style.background=cols[i%4]; d.style.boxShadow='0 0 8px '+cols[i%4];
+    d.style.setProperty('--x',Math.cos(a)*r+'px'); d.style.setProperty('--y',Math.sin(a)*r+'px');
+    arena.appendChild(d); setTimeout(()=>d.remove(),550);
+  }
+}
+function tick(){
+  const rem=deadline-performance.now();
+  if(rem<=0){ endGame(); return; }
+  const sec=Math.ceil(rem/1000);
+  timeEl.textContent=sec;
+  fill.style.width=(rem/GAME_MS*100)+'%';
+  const p=rem/GAME_MS, c=p>.5?'#39ff14':p>.25?'#ffe600':'#ff2d6f';
+  fill.style.background=c; fill.style.color=c;
+  timeBox.classList.toggle('low',sec<=3);
+  if(sec!==lastSec){ lastSec=sec; if(sec<=3) sfx.beep(); }
+}
+function startGame(){
+  score=hits=misses=0; running=true; lastSec=0;
+  scoreEl.textContent=0; timeEl.textContent=30; fill.style.width='100%';
+  overlay.hidden=true; target.style.display='block';
+  deadline=performance.now()+GAME_MS;
+  moveTarget(); restartMove(); sfx.start();
+  clearInterval(tickTimer); tickTimer=setInterval(tick,100);
+}
+function rankOf(s){ return s>20?'🏆 THẦN SẠ PHẢN XẠ':s>=10?'🎯 XẠ THỦ':'🌱 TẬP SỰ'; }
+function endGame(){
+  running=false; clearInterval(moveTimer); clearInterval(tickTimer);
+  target.style.display='none'; timeEl.textContent=0; fill.style.width='0%'; timeBox.classList.remove('low');
+  const tot=hits+misses, acc=tot?Math.round(hits/tot*100):0, isBest=score>best;
+  if(isBest){ best=score; bestEl.textContent=best; try{localStorage.setItem('bt38best',best);}catch(e){} }
+  overlay.innerHTML='<div class="go">GAME OVER</div><div class="final">'+score+'</div>'+
+    '<div class="rank">'+rankOf(score)+'</div>'+
+    '<div class="sb"><span>Trúng: <b>'+hits+'</b></span><span>Trượt: <b>'+misses+'</b></span><span>Chính xác: <b>'+acc+'%</b></span></div>'+
+    (isBest&&score>0?'<div class="rank" style="font-size:.9rem">⭐ KỶ LỤC MỚI!</div>':'')+
+    '<button id="again" class="big">CHƠI LẠI</button>';
+  overlay.hidden=false; $('again').onclick=startGame;
+  if(score>=10){ sfx.win(); confetti(score>20?220:110); } else sfx.over();
+}
+target.addEventListener('pointerdown',e=>{
+  e.preventDefault(); e.stopPropagation();
+  if(!running) return;
+  hits++; score++; scoreEl.textContent=score; bump(scoreEl); sfx.hit();
+  const x=target.offsetLeft+target.offsetWidth/2, y=target.offsetTop+target.offsetHeight/2;
+  sparks(x,y); floatText(x,y,'+1','ok');
+  moveTarget(); restartMove();
+});
+arena.addEventListener('pointerdown',e=>{
+  if(!running) return;
+  const r=arena.getBoundingClientRect();
+  misses++; deadline-=PENALTY; sfx.miss(); tick();
+  floatText(e.clientX-r.left-arena.clientLeft,e.clientY-r.top-arena.clientTop,'MISS -0.5s','bad');
+  arena.classList.add('miss'); setTimeout(()=>arena.classList.remove('miss'),180);
+});
+$('startBtn').onclick=startGame;
+
+const bg=$('bg'), bx=bg.getContext('2d'); let P=[];
+function fit(c){ c.width=innerWidth; c.height=innerHeight; }
+addEventListener('resize',()=>{fit(bg);fit(cf);});
+const cf=$('conf'), cx=cf.getContext('2d'); fit(bg); fit(cf);
+for(let i=0;i<55;i++) P.push({x:Math.random()*bg.width,y:Math.random()*bg.height,r:Math.random()*2+.6,vy:-(Math.random()*.4+.1),vx:(Math.random()-.5)*.2,c:['#00e5ff','#ff2d6f','#39ff14'][i%3]});
+(function loop(){
+  bx.clearRect(0,0,bg.width,bg.height);
+  for(const p of P){
+    p.x+=p.vx; p.y+=p.vy; if(p.y<-5){p.y=bg.height+5;p.x=Math.random()*bg.width;}
+    bx.beginPath(); bx.arc(p.x,p.y,p.r,0,7); bx.fillStyle=p.c; bx.shadowColor=p.c; bx.shadowBlur=10; bx.globalAlpha=.7; bx.fill();
+  }
+  requestAnimationFrame(loop);
+})();
+
+function confetti(n){
+  const cols=['#00e5ff','#ff2d6f','#39ff14','#ffe600','#fff'];
+  const C=Array.from({length:n},()=>({x:Math.random()*cf.width,y:-20-Math.random()*cf.height*.5,w:6+Math.random()*6,h:4+Math.random()*6,vx:(Math.random()-.5)*2,vy:1.5+Math.random()*2.5,a:Math.random()*6,va:(Math.random()-.5)*.3,c:cols[Math.floor(Math.random()*5)]}));
+  let frames=0;
+  (function f(){
+    cx.clearRect(0,0,cf.width,cf.height);
+    for(const p of C){ p.x+=p.vx; p.y+=p.vy; p.a+=p.va; cx.save(); cx.translate(p.x,p.y); cx.rotate(p.a); cx.fillStyle=p.c; cx.fillRect(-p.w/2,-p.h/2,p.w,p.h); cx.restore(); }
+    if(++frames<360) requestAnimationFrame(f); else cx.clearRect(0,0,cf.width,cf.height);
+  })();
+}
+</script>
+</body>
+</html>
